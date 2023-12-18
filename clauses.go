@@ -22,7 +22,7 @@ func CreateUpdateClause(stmt *Statement) {
 	}
 }
 
-//nolint:cyclomatic // we want to maintain it has similar as possible with gorm.io/gorm
+//nolint:cyclop // we want to maintain it has similar as possible with gorm.io/gorm
 func GenJoinClauses(db *DB, clauseSelect *clause.Select) []clause.Join {
 	joinClauses := []clause.Join{}
 
