@@ -8,19 +8,19 @@ import (
 	"gorm.io/gorm/utils"
 )
 
-func CreateUpdateClause(stmt *Statement) {
-	updateClause := clause.Update{}
-	if v, ok := stmt.Clauses["UPDATE"].Expression.(clause.Update); ok {
-		updateClause = v
-	}
+// func CreateUpdateClause(stmt *Statement) {
+// 	updateClause := clause.Update{}
+// 	if v, ok := stmt.Clauses["UPDATE"].Expression.(clause.Update); ok {
+// 		updateClause = v
+// 	}
 
-	if len(stmt.Joins) != 0 || len(updateClause.Joins) != 0 {
-		updateClause.Joins = append(updateClause.Joins, GenJoinClauses(stmt.DB, &clause.Select{})...)
-		stmt.AddClause(updateClause)
-	} else {
-		stmt.AddClauseIfNotExists(clause.Update{})
-	}
-}
+// 	if len(stmt.Joins) != 0 || len(updateClause.Joins) != 0 {
+// 		updateClause.Joins = append(updateClause.Joins, GenJoinClauses(stmt.DB, &clause.Select{})...)
+// 		stmt.AddClause(updateClause)
+// 	} else {
+// 		stmt.AddClauseIfNotExists(clause.Update{})
+// 	}
+// }
 
 //nolint:cyclop // we want to maintain it has similar as possible with gorm.io/gorm
 func GenJoinClauses(db *DB, clauseSelect *clause.Select) []clause.Join {
