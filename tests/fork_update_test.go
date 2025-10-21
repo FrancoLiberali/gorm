@@ -1,9 +1,5 @@
 package tests_test
 
-import (
-	. "gorm.io/gorm/utils/tests"
-)
-
 // only mysql support update join
 // func TestReasonUpdateJoinUpdatedAtIsAmbiguous(t *testing.T) {
 // 	if DB.Dialector.Name() != "mysql" {
