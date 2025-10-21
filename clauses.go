@@ -182,7 +182,5 @@ func GenJoinClauses(db *DB, clauseSelect *clause.Select) []clause.Join {
 		}
 	}
 
-	db.Statement.Joins = nil
-
 	return joinClauses
 }
