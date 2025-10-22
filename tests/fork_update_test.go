@@ -16,7 +16,9 @@ func TestReasonUpdateJoinUpdatedAtIsAmbiguous(t *testing.T) {
 		return
 	}
 
-	if err := DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Model(&User{}).InnerJoins("Account", DB.Where("number = ?", 1)).Update("name", "jinzhu").Error; !strings.Contains(err.Error(), "Column 'updated_at' in field list is ambiguous") {
+	err := DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Model(&User{}).InnerJoins("Account", DB.Where("number = ?", 1)).Update("name", "jinzhu").Error
+
+	if !strings.Contains(err.Error(), "Column 'updated_at' in field list is ambiguous") && !strings.Contains(err.Error(), "Error 1052 (23000): Column 'updated_at' in SET is ambiguous") {
 		t.Errorf(`Error should be column is ambiguous, but got: "%s"`, err)
 	}
 }
