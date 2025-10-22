@@ -25,7 +25,7 @@ func (update Update) Build(builder Builder) {
 	}
 
 	for _, join := range update.Joins {
-		builder.WriteByte(' ')
+		_ = builder.WriteByte(' ')
 		join.Build(builder)
 	}
 }

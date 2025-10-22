@@ -133,7 +133,7 @@ func GenJoinClauses(db *DB, clauseSelect *clause.Select) []clause.Join {
 									for idx, v := range vars {
 										bindvar := strings.Builder{}
 										onStmt.Vars = vars[0 : idx+1]
-										db.Dialector.BindVarTo(&bindvar, &onStmt, v)
+										db.BindVarTo(&bindvar, &onStmt, v)
 										onSQL = strings.Replace(onSQL, bindvar.String(), "?", 1)
 									}
 

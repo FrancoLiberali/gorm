@@ -142,7 +142,7 @@ func (sd SoftDeleteDeleteClause) MergeClause(*clause.Clause) {
 func (sd SoftDeleteDeleteClause) ModifyStatement(stmt *Statement) {
 	if stmt.SQL.Len() == 0 && !stmt.Statement.Unscoped {
 		if _, ok := stmt.Clauses["SET"]; !ok {
-			curTime := stmt.DB.NowFunc()
+			curTime := stmt.NowFunc()
 			stmt.AddClause(clause.Set{{Column: clause.Column{Name: sd.Field.DBName}, Value: curTime}})
 			stmt.SetColumn(sd.Field.DBName, curTime, true)
 
