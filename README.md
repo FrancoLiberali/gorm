@@ -1,5 +1,10 @@
 # GORM
 
+Fork of [gorm](https://github.com/go-gorm/gorm) used by [cql](https://github.com/FrancoLiberali/cql). This version contains some extra features to the original library that may not be stable, so it should never be used outside of cql:
+
+* Possibility to make a preload together with an update or delete statement ([pr](https://github.com/FrancoLiberali/gorm/pull/4)). The gorm contributors are not interested in adding this feature (see the [pr](https://github.com/go-gorm/gorm/pull/6583)).
+* Possibility to make joins inside an update (only supported by mysql) ([pr](https://github.com/FrancoLiberali/gorm/pull/3)). The implementation of this feature is not complete and only works in cql use cases.
+
 The fantastic ORM library for Golang, aims to be developer friendly.
 
 [![go report card](https://goreportcard.com/badge/github.com/go-gorm/gorm "go report card")](https://goreportcard.com/report/github.com/go-gorm/gorm)
