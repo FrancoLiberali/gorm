@@ -292,7 +292,7 @@ func (db *DB) WithContextLight(ctx context.Context) *DB {
 		SkipHooks:     db.Statement.SkipHooks,
 		LightTemplate: true,
 	}
-	if db.Config.PropagateUnscoped {
+	if db.PropagateUnscoped {
 		tx.Statement.Unscoped = db.Statement.Unscoped
 	}
 

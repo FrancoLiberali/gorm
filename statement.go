@@ -204,7 +204,7 @@ func (stmt *Statement) AddVar(writer clause.Writer, vars ...interface{}) {
 			uint, uint16, uint32, uint64,
 			float32, float64:
 			stmt.Vars = append(stmt.Vars, v)
-			stmt.DB.Dialector.BindVarTo(writer, stmt, v)
+			stmt.Dialector.BindVarTo(writer, stmt, v)
 			continue
 		}
 
@@ -228,10 +228,10 @@ func (stmt *Statement) AddVar(writer clause.Writer, vars ...interface{}) {
 			v.Build(stmt)
 		case driver.Valuer:
 			stmt.Vars = append(stmt.Vars, v)
-			stmt.DB.Dialector.BindVarTo(writer, stmt, v)
+			stmt.Dialector.BindVarTo(writer, stmt, v)
 		case []byte:
 			stmt.Vars = append(stmt.Vars, v)
-			stmt.DB.Dialector.BindVarTo(writer, stmt, v)
+			stmt.Dialector.BindVarTo(writer, stmt, v)
 		case []interface{}:
 			if len(v) > 0 {
 				writer.WriteByte('(')
@@ -279,7 +279,7 @@ func (stmt *Statement) AddVar(writer clause.Writer, vars ...interface{}) {
 					writer.WriteString("(NULL)")
 				} else if rv.Type().Elem() == reflect.TypeOf(uint8(0)) {
 					stmt.Vars = append(stmt.Vars, v)
-					stmt.DB.Dialector.BindVarTo(writer, stmt, v)
+					stmt.Dialector.BindVarTo(writer, stmt, v)
 				} else {
 					writer.WriteByte('(')
 					for i := 0; i < rv.Len(); i++ {
@@ -292,7 +292,7 @@ func (stmt *Statement) AddVar(writer clause.Writer, vars ...interface{}) {
 				}
 			default:
 				stmt.Vars = append(stmt.Vars, v)
-				stmt.DB.Dialector.BindVarTo(writer, stmt, v)
+				stmt.Dialector.BindVarTo(writer, stmt, v)
 			}
 		}
 	}
@@ -315,7 +315,7 @@ func (stmt *Statement) AddVarSingle(writer clause.Writer, v interface{}) {
 		uint, uint16, uint32, uint64,
 		float32, float64:
 		stmt.Vars = append(stmt.Vars, v)
-		stmt.DB.Dialector.BindVarTo(writer, stmt, v)
+		stmt.Dialector.BindVarTo(writer, stmt, v)
 		return
 	}
 	stmt.AddVar(writer, v)

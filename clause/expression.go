@@ -171,7 +171,7 @@ func processValue(builder Builder, value interface{}) {
 		} else {
 			for i := 0; i < rv.Len(); i++ {
 				if i > 0 {
-					builder.WriteByte(',')
+					_ = builder.WriteByte(',')
 				}
 				addSingleVar(builder, rv.Index(i).Interface())
 			}
