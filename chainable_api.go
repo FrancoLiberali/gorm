@@ -1,6 +1,7 @@
 package gorm
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -210,6 +211,92 @@ func (db *DB) Where(query interface{}, args ...interface{}) (tx *DB) {
 		tx.Statement.AddClause(clause.Where{Exprs: conds})
 	}
 	return
+}
+
+// WhereRaw adds a WHERE condition from a raw SQL fragment + a
+// pre-collected args slice. This is a specialization of Where for
+// callers that already know they hold a plain SQL string, skipping:
+//
+//   - Where's `interface{}` type dispatch on the query argument
+//   - BuildCondition's strconv.Atoi, strings.Contains, and struct/map/
+//     expression-as-conditions fallbacks
+//   - The variadic-to-slice conversion when the caller already has a []any
+//
+// Semantics match `Where(sql, args...)` for the string case: empty sql
+// with no args is a no-op; otherwise wrap in clause.Expr and append to
+// the WHERE clause. args stays typed as []any because bound values are
+// inherently heterogeneous — a single WHERE binds (string, int, uuid, ...)
+// in one call, and at the driver boundary they become []driver.Value.
+func (db *DB) WhereRaw(sql string, args []any) (tx *DB) {
+	tx = db.getInstance()
+	if sql == "" && len(args) == 0 {
+		return
+	}
+	tx.Statement.AddClause(clause.Where{
+		Exprs: []clause.Expression{clause.Expr{SQL: sql, Vars: args}},
+	})
+	return
+}
+
+// StartQuery combines Model + Select into a single getInstance() call.
+// The chainable-fluent equivalent `db.Model(&m).Select("t.*")` allocates
+// *DB + *Statement + Clauses map + Vars slice TWICE (once per chain
+// step) and does a variadic type-switch dance inside Select for a case
+// (`string` with no args) that could be a direct slice assignment.
+//
+// Fast path: when db was returned by WithContextLight the Statement
+// carries LightTemplate=true and no Clauses map yet. StartQuery promotes
+// that template in-place — no *DB / *Statement alloc — populating the
+// working Statement fields and marking clone=0 so subsequent chainables
+// (WhereRaw, etc.) mutate this Statement directly. Consumers that need
+// to fan out multiple queries from the same context (e.g. Delete's
+// primary + secondary pair) must fork the tx explicitly (see
+// tx.Session(...)) before the second call.
+func (db *DB) StartQuery(model any, selects []string) *DB {
+	if db.Statement.LightTemplate {
+		db.Statement.LightTemplate = false
+		db.Statement.Clauses = map[string]clause.Clause{}
+		db.Statement.Vars = make([]interface{}, 0, 8)
+		db.Statement.Model = model
+		db.Statement.Selects = selects
+		db.clone = 0
+
+		return db
+	}
+
+	tx := db.getInstance()
+	tx.Statement.Model = model
+	tx.Statement.Selects = selects
+	return tx
+}
+
+// WithContextLight is a lightweight replacement for WithContext(ctx) when
+// the caller only needs to attach a context (no other Session options).
+// Vanilla WithContext dispatches through Session which then calls
+// Statement.clone — a full copy of Clauses/Preloads maps plus a
+// Settings.Range copy of the (typically empty) source statement.
+//
+// Instead we return a template *DB whose Statement holds only Context +
+// ConnPool. clone=1 is set so the very next getInstance() takes the
+// lightweight clone-with-new-statement path, inheriting the context and
+// producing a fresh working statement. Callers that fan out multiple
+// queries off the same template (e.g. Delete's primary+secondary) each
+// get an isolated statement, matching Session's semantics without the
+// map-copy cost.
+func (db *DB) WithContextLight(ctx context.Context) *DB {
+	tx := &DB{Config: db.Config, Error: db.Error, clone: 1}
+	tx.Statement = &Statement{
+		DB:            tx,
+		ConnPool:      db.Statement.ConnPool,
+		Context:       ctx,
+		SkipHooks:     db.Statement.SkipHooks,
+		LightTemplate: true,
+	}
+	if db.PropagateUnscoped {
+		tx.Statement.Unscoped = db.Statement.Unscoped
+	}
+
+	return tx
 }
 
 // Not add NOT conditions

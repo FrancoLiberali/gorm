@@ -36,7 +36,7 @@ func (expr Expr) Build(builder Builder) {
 			if afterParenthesis || expr.WithoutParentheses {
 				processValue(builder, expr.Vars[idx])
 			} else {
-				builder.AddVar(builder, expr.Vars[idx])
+				addSingleVar(builder, expr.Vars[idx])
 			}
 
 			idx++
@@ -160,25 +160,38 @@ func (expr NamedExpr) Build(builder Builder) {
 // It checks for driver.Valuer first, then handles slices/arrays, and finally adds single values
 func processValue(builder Builder, value interface{}) {
 	if _, ok := value.(driver.Valuer); ok {
-		builder.AddVar(builder, value)
+		addSingleVar(builder, value)
 		return
 	}
 
 	switch rv := reflect.ValueOf(value); rv.Kind() {
 	case reflect.Slice, reflect.Array:
 		if rv.Len() == 0 {
-			builder.AddVar(builder, nil)
+			addSingleVar(builder, nil)
 		} else {
 			for i := 0; i < rv.Len(); i++ {
 				if i > 0 {
-					builder.WriteByte(',')
+					_ = builder.WriteByte(',')
 				}
-				builder.AddVar(builder, rv.Index(i).Interface())
+				addSingleVar(builder, rv.Index(i).Interface())
 			}
 		}
 	default:
-		builder.AddVar(builder, value)
+		addSingleVar(builder, value)
 	}
+}
+
+// addSingleVar binds a single value, preferring the non-variadic
+// SingleVarBuilder.AddVarSingle fast path (skips the []interface{}{v}
+// slice allocation that the variadic AddVar signature forces per '?'
+// placeholder) when the Builder implements it. Third-party Builder
+// implementations fall through to the variadic AddVar unchanged.
+func addSingleVar(builder Builder, v interface{}) {
+	if svb, ok := builder.(SingleVarBuilder); ok {
+		svb.AddVarSingle(builder, v)
+		return
+	}
+	builder.AddVar(builder, v)
 }
 
 // IN Whether a value is within a set of values

@@ -4,6 +4,11 @@ Fork of [gorm](https://github.com/go-gorm/gorm) used by [cql](https://github.com
 
 * Possibility to make a preload together with an update or delete statement ([pr](https://github.com/FrancoLiberali/gorm/pull/4)). The gorm contributors are not interested in adding this feature (see the [pr](https://github.com/go-gorm/gorm/pull/6583)).
 * Possibility to make joins inside an update (only supported by mysql) ([pr](https://github.com/FrancoLiberali/gorm/pull/3)). The implementation of this feature is not complete and only works in cql use cases.
+* Low-allocation fast paths for cql's code-generated query construction ([pr](https://github.com/FrancoLiberali/gorm/pull/6)). cql already knows its inputs are plain SQL strings and scalar values, so these additive helpers let it skip gorm's reflection and type-dispatch machinery on the hot loop. They are unexported-in-spirit — safe only for callers with those guarantees:
+    * `WhereRaw(sql string, args []any)`: adds a plain-SQL `WHERE` fragment directly, skipping `BuildCondition`'s `strconv.Atoi` / `strings.Contains` / struct-map-expression fallback checks, and taking a `[]any` to avoid the variadic-to-slice conversion.
+    * `StartQuery(model, selects)` + `WithContextLight(ctx)` (backed by a `LightTemplate` statement): attach model, selects and context reusing a light statement template instead of cloning a full session and rebuilding the clause map / vars slice on every query.
+    * Scalar bind fast path (`AddVar` / `AddVarSingle` + the `SingleVarBuilder` interface): binds built-in scalar values (string, bool, int/uint/float variants) without the interface type-switch + `reflect.ValueOf().Kind()` dance, and without the `[]interface{}{v}` slice allocation; non-scalar / third-party builders fall through to the unchanged path.
+    * Smaller per-query allocation trims: a `RowsMode` bool replacing the `Settings["rows"]` `sync.Map` dance in `Rows()`/`RowQuery` (with the `sync.Map` kept as a fallback), and `IndexByte` instead of `strings.Split` when parsing `schema.table` names.
 
 The fantastic ORM library for Golang, aims to be developer friendly.
 
