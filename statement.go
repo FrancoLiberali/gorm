@@ -605,6 +605,7 @@ func (stmt *Statement) clone() *Statement {
 		RaiseErrorOnNotFound: stmt.RaiseErrorOnNotFound,
 		SkipHooks:            stmt.SkipHooks,
 		Result:               stmt.Result,
+		RowsMode:             stmt.RowsMode,
 	}
 
 	if stmt.SQL.Len() > 0 {
